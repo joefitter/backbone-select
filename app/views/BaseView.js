@@ -107,15 +107,14 @@ define([
         val = $el.val(),
         key = e.keyCode,
         current;
-      //enter
-      if (key === 13) {
+      if (key === 13) { //enter
         $el.val('');
         this.clickOption($('a.current', this.el));
         $('a', this.el).removeClass('current');
-      } else if (key === 27) {
+      } else if (key === 27) { //esc
         this.hideOptions();
         this.focus = false;
-      } else if (key === 40) {
+      } else if (key === 40) { //down arrow
         e.preventDefault();
         this.showOptions();
         current = $('a.current', this.el).length ? $('a.current', this.el).next() : $('a', this.el).first();
@@ -124,7 +123,7 @@ define([
         if (current.length) {
           $('.custom-select-options', this.el).stop().scrollTo(current, 400);
         }
-      } else if (key === 38) {
+      } else if (key === 38) { //up arrow
         e.preventDefault();
         this.showOptions();
         current = $('a.current', this.el).length ? $('a.current', this.el).prev() : $('a', this.el).last();
