@@ -1,0 +1,21 @@
+{
+  "name": "backbone-select",
+  "version": "0.0.0",
+  "homepage": "https://github.com/joefitter/backbone-select",
+  "authors": [
+    "Joe Fitter <joefitter@hotmail.com>"
+  ],
+  "description": "Custom AMD select element using Backbone & Require",
+  "main": "app/views/BaseView.js",
+  "moduleType": [
+    "amd"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
