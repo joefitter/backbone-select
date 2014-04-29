@@ -27,6 +27,7 @@ define([
       if (!this.options.shade) {
         this.options.shade = 'light';
       }
+      this.render();
       jQuery.expr[':'].Contains = jQuery.expr.createPseudo(function(arg) {
         return function(elem) {
           return jQuery(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
@@ -44,7 +45,7 @@ define([
     focus: false,
     render: function() {
       var template = this.buildTemplate();
-      this.$el.html(_.template(template(this)));
+      this.$el.html(_.template(template)(this));
       $(window).bind('click', _.bind(this.clickHandler, this));
       $(window).bind('keydown', _.bind(this.keypressHandler, this));
       this.delegateEvents();
@@ -54,7 +55,7 @@ define([
       var tpl = '<div class="custom-select-wrapper <%= options.shade %>">';
       if(!this.options.multiSelect){
         tpl += '   <div class="custom-select"';
-        if(this.collection.length){
+        if(!this.collection.length){
           tpl += '   data-disabled="true"';  
         }
         tpl += '     >';
@@ -90,6 +91,7 @@ define([
       });
       tpl += '     </div>';
       tpl += '  </div>';
+      console.log(tpl);
       return tpl;
     },
     clickHandler: function(e) {
