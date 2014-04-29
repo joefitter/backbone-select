@@ -14,6 +14,7 @@ define([
 
   return Backbone.View.extend({
     initialize: function(options) {
+      var self = this;
       if (!options || typeof options !== 'object') {
         throw new Error('Tooltip needs to be provided with a jQuery element object or options hash');
       }
@@ -43,11 +44,24 @@ define([
       this.options.emptyText = this.options.emptyText || 'No results available';
       this.options.placeholder = this.options.placeholder || 'Choose one...';
       this.render();
-      jQuery.expr[':'].Contains = jQuery.expr.createPseudo(function(arg) {
+      $.expr[':'].Contains = jQuery.expr.createPseudo(function(arg) {
         return function(elem) {
           return jQuery(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
         };
       });
+      $.fn.scrollTo = function(ref, duration){
+        self.scrollTo($(this), ref, duration);
+      };
+    },
+    scrollTo: function($el, $ref, duration){
+      var top = $ref.position().top + $ref.outerHeight();
+      if(top >= $ref.offsetParent().outerHeight()){
+        $el.animate({scrollTop: $ref.outerHeight()}, 400);
+      }
+      console.log($ref.offsetParent())
+      console.log($el.scrollTop())
+      console.log(top)
+      //
     },
     parseDataAttributes: function($el){
       var ops = {};
@@ -71,8 +85,9 @@ define([
     },
     events: {
       'click': 'focusSelect',
-      'focus input': 'handleFocus',
-      'keyup input': 'quickSearch',
+      'focus input.custom-select-input': 'handleFocus',
+      //'keyup input.quicksearch': 'quickSearch',
+      'keyup input.custom-select-input': 'navigate',
       'mouseenter .custom-select-options a': 'highlightOption',
       'mouseout .custom-select-wrapper': 'deselectAll'
     },
@@ -83,8 +98,8 @@ define([
       }
       var template = this.buildTemplate();
       this.$el.html(_.template(template)(this));
-      $(window).bind('mousedown', _.bind(this.clickHandler, this));
-      $(window).bind('keydown', _.bind(this.keypressHandler, this));
+      // $(window).bind('mousedown', _.bind(this.clickHandler, this));
+      // $(window).bind('keydown', _.bind(this.keypressHandler, this));
       this.delegateEvents();
       return this;
     },
@@ -125,7 +140,7 @@ define([
       }
       tpl += '     <div class="custom-select-options">';
       if(this.options.quickSearch){
-        tpl += '     <input type="text" class="form-control">';
+        tpl += '     <input type="text" class="form-control quicksearch" placeholder="Start typing..">';
       }
       tpl += '       <div class="options-container">';
       this.collection.each(function(model){
@@ -137,11 +152,15 @@ define([
       return tpl;
     },
     clickHandler: function(e) {
+      var $el = $(e.target);
       //Check if element clicked is root element, or one of its children.
-      if (this.el === $(e.target).get(0) || this.$el.find($(e.target)).length > 0) {
-        if (!$(e.target).parent('.custom-select-options').hasClass('custom-select-options')) {
+      if (this.el === $el.get(0) || this.$el.find($el).length > 0) {
+        if (!$el.parents('.custom-select-options').hasClass('custom-select-options')) {
           this.focusSelect();
         } else {
+          if($el.hasClass('quicksearch')){
+            return;
+          }
           if (!this.options.multiSelect) {
             this.hideOptions();
             this.focus = false;
@@ -177,14 +196,32 @@ define([
       this.$el.find('.custom-select').removeClass('focused');
     },
     focusSelect: function() {
-      if (!this.focus) {
-        this.$el.find('input').focus();
-        this.focus = true;
-      }
+      this.$el.find('input.custom-select-input').focus();
+      this.focus = true;
     },
     handleFocus: function() {
       this.$el.find('.custom-select').addClass('focused');
       this.showOptions();
+    },
+    navigate: function(e){
+      var kc = e.keyCode, current;
+      switch(kc){
+        case 37: //left arrow
+        case 38: //up arrow
+          //scroll up
+          break;
+        case 39: //right arrow
+        case 40: //down arrow
+          current = $('a.current', this.el).length ? $('a.current', this.el).next() : $('a', this.el).first();
+          $('a.current', this.el).removeClass('current');
+          current.addClass('current');
+          if (current.length) {
+            $('.options-container', this.el).stop().scrollTo(current, 400);
+          }
+          break;
+        default:
+          return false;
+      }
     },
     quickSearch: function(e) {
       var $el = $(e.target),
@@ -201,12 +238,7 @@ define([
       } else if (key === 40) { //down arrow
         e.preventDefault();
         this.showOptions();
-        current = $('a.current', this.el).length ? $('a.current', this.el).next() : $('a', this.el).first();
-        $('a.current', this.el).removeClass('current');
-        current.addClass('current');
-        if (current.length) {
-          $('.custom-select-options', this.el).stop().scrollTo(current, 400);
-        }
+        
       } else if (key === 38) { //up arrow
         e.preventDefault();
         this.showOptions();
@@ -214,28 +246,29 @@ define([
         $('a.current', this.el).removeClass('current');
         current.addClass('current');
         if (current.length) {
-          $('.custom-select-options', this.el).stop().scrollTo(current, 400);
+          $('.options-container', this.el).stop().scrollTo(current, 400);
         }
       } else if (val !== '') {
         $('a', this.el).removeClass('current');
         current = $('a:Contains("' + val + '")', this.el).first();
         current.addClass('current');
         if (current.length) {
-          $('.custom-select-options', this.el).stop().scrollTo(current, 400);
+          $('.options-container', this.el).stop().scrollTo(current, 400);
         }
       } else {
         $('a', this.el).removeClass('current');
-        $('.custom-select-options', this.el).stop().scrollTo({
+        $('.options.container', this.el).stop().scrollTo({
           top: 0,
           left: 0
         }, 400);
       }
     },
     showOptions: function() {
-      this.$el.find('.custom-select-options').show();
+      $('.custom-select-options', this.el).show();
+      $('.options-container a:first').addClass('current');
     },
     hideOptions: function() {
-      this.$el.find('.custom-select-options').hide();
+      $('.custom-select-options', this.el).hide();
     },
     cursorTimeout: [],
     highlightOption: function(event) {
