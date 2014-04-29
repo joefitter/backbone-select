@@ -14,12 +14,25 @@ define([
 
   return Backbone.View.extend({
     initialize: function(options) {
-      this.options = options || {};
+      if (!options || typeof options !== 'object') {
+        throw new Error('Tooltip needs to be provided with a jQuery element object or options hash');
+      }
+
+      /*
+       * Check if Select was instantiated with
+       * a jQuery object or an options hash.
+       */
+      if (options instanceof $) {
+        this.options = this.parseDataAttributes(options);
+      } else {
+        this.options = options;
+      }
+      
       this.collection = new CustomSelectCollection(this.options.collection);
       if (this.options.placeholder && this.options.addPlaceholderAsOption) {
         this.collection.add({
-          id: -1,
-          name: this.options.placeholder
+          value: -1,
+          title: this.options.placeholder
         }, {
           at: 0
         });
@@ -27,6 +40,8 @@ define([
       if (!this.options.shade) {
         this.options.shade = 'light';
       }
+      this.options.emptyText = this.options.emptyText || 'No results available';
+      this.options.placeholder = this.options.placeholder || 'Choose one...';
       this.render();
       jQuery.expr[':'].Contains = jQuery.expr.createPseudo(function(arg) {
         return function(elem) {
@@ -34,19 +49,41 @@ define([
         };
       });
     },
+    parseDataAttributes: function($el){
+      var ops = {};
+      ops.$el = $el;
+      ops.id = $el.attr('data-bbselect');
+      ops.placeholder = $el.attr('placeholder');
+      ops.quickSearch = $el.attr('data-bbselect-quicksearch');
+      ops.collection = this.parseOptions($el);
+      return ops;
+    },
+    parseOptions: function($el){
+      if($el.children('option').length){
+        var collection = [];
+        $el.children('option').each(function(){
+          var $this = $(this),
+            model = {value: $this.attr('value') ? $this.attr('value') : $this.text(), title: $this.text()};
+          collection.push(model);
+        });
+        return collection;
+      }
+    },
     events: {
       'click': 'focusSelect',
       'focus input': 'handleFocus',
       'keyup input': 'quickSearch',
       'mouseenter .custom-select-options a': 'highlightOption',
-      'mouseout .custom-select-wrapper': 'deselectAll',
-      'click .custom-select-options a': 'handleOptionClick'
+      'mouseout .custom-select-wrapper': 'deselectAll'
     },
     focus: false,
     render: function() {
+      if(this.options.$el){
+        this.options.$el.replaceWith(this.$el);  
+      }
       var template = this.buildTemplate();
       this.$el.html(_.template(template)(this));
-      $(window).bind('click', _.bind(this.clickHandler, this));
+      $(window).bind('mousedown', _.bind(this.clickHandler, this));
       $(window).bind('keydown', _.bind(this.keypressHandler, this));
       this.delegateEvents();
       return this;
@@ -67,15 +104,16 @@ define([
         tpl += '       >';
         if(!this.options.value){
           if(this.collection.length){
-            tpl += this.options.placeholder;
+            tpl += '<span class="placeholder"><%= options.placeholder %></span>';
           }
           else {
             tpl += this.options.emptyText;
           }
+        } else {
+          tpl += this.options.value;
         }
-        tpl += this.options.value;
         tpl += '     </div>';
-        tpl += '     <input class="custom-select-input" type="text" />';
+        tpl += '     <input class="custom-select-input" id="<%= options.id %>" type="text" />';
         tpl += '     <div class="clear"></div>';
         tpl += '   </div>';
       } else {
@@ -86,12 +124,16 @@ define([
         tpl += '   >';
       }
       tpl += '     <div class="custom-select-options">';
+      if(this.options.quickSearch){
+        tpl += '     <input type="text" class="form-control">';
+      }
+      tpl += '       <div class="options-container">';
       this.collection.each(function(model){
-        tpl += '     <a data-id="' + model.get('id') + '" href="#">' + model.get('name') + '</a>';
+        tpl += '       <a data-value="' + model.get('value') + '" href="#">' + model.get('title') + '</a>';
       });
+      tpl += '       </div>';
       tpl += '     </div>';
       tpl += '  </div>';
-      console.log(tpl);
       return tpl;
     },
     clickHandler: function(e) {
@@ -103,7 +145,8 @@ define([
           if (!this.options.multiSelect) {
             this.hideOptions();
             this.focus = false;
-          }
+            this.handleOptionClick(e);
+          } 
         }
       } else {
         this.handleBlur();
@@ -204,11 +247,11 @@ define([
       $('.custom-select-options a', this.el).removeClass('current');
     },
     changeOption: function($target) {
-      this.trigger('option-added', $target.attr('data-id'));
+      this.trigger('option-added', $target.attr('data-value'));
       this.$el.find('input').focus();
       if (!this.options.multiSelect) {
-        this.trigger('changed', $target.attr('data-id'));
         $('.custom-select-content', this.el).text($target.text());
+        this.trigger('changed', $target.attr('data-value'));
       }
     },
     destroy: function() {
