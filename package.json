@@ -1,6 +1,6 @@
 {
   "name": "backbone-select",
-  "version": "0.0.0",
+  "version": "v0.0.2",
   "description": "Custom AMD select element using Backbone & Require",
   "main": "src/backbone-select.amd.js",
   "scripts": {
