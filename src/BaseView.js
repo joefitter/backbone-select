@@ -1,19 +1,16 @@
 /*global _*/
 
 define([
-  'backbone',
-  '../collections/CustomSelectCollection',
-  'stache!customSelect',
-  'includes/tooltip/views/BaseView',
-  'scrollTo'
+  'jquery',
+  'backbone'
 ], function(
-  Backbone,
-  CustomSelectCollection,
-  customSelectTemplate,
-  Tooltip
-
+  $,
+  Backbone
 ) {
   'use strict';
+
+  var CustomSelectModel = Backbone.Model.extend(),
+    CustomSelectCollection = Backbone.Collection.extend({model: CustomSelectModel});
 
   return Backbone.View.extend({
     initialize: function(options) {
@@ -46,11 +43,54 @@ define([
     },
     focus: false,
     render: function() {
-      this.$el.html(customSelectTemplate(this));
+      var template = this.buildTemplate();
+      this.$el.html(_.template(template(this)));
       $(window).bind('click', _.bind(this.clickHandler, this));
       $(window).bind('keydown', _.bind(this.keypressHandler, this));
       this.delegateEvents();
       return this;
+    },
+    buildTemplate: function(){
+      var tpl = '<div class="custom-select-wrapper <%= options.shade %>">';
+      if(!this.options.multiSelect){
+        tpl += '   <div class="custom-select"';
+        if(this.collection.length){
+          tpl += '   data-disabled="true"';  
+        }
+        tpl += '     >';
+        tpl += '     <div class="custom-select-button">&#x25BC;</div>';
+        tpl += '     <div class="custom-select-content"';
+        if(this.options.multiSelect){
+          tpl += '     data-multi="true"';
+        }
+        tpl += '       >';
+        if(!this.options.value){
+          if(this.collection.length){
+            tpl += this.options.placeholder;
+          }
+          else {
+            tpl += this.options.emptyText;
+          }
+        }
+        tpl += this.options.value;
+        tpl += '     </div>';
+        tpl += '     <input class="custom-select-input" type="text" />';
+        tpl += '     <div class="clear"></div>';
+        tpl += '   </div>';
+      } else {
+        tpl += '   <input class="custom-select-content <%= options.className %>" type="text"';
+        if(this.options.placeholder){
+          tpl += '   placeholder="<%= options.placeholder %>"';
+        }
+        tpl += '   >';
+      }
+      tpl += '     <div class="custom-select-options">';
+      this.collection.each(function(model){
+        tpl += '     <a data-id="' + model.get('id') + '" href="#">' + model.get('name') + '</a>';
+      });
+      tpl += '     </div>';
+      tpl += '  </div>';
+      return tpl;
     },
     clickHandler: function(e) {
       //Check if element clicked is root element, or one of its children.
@@ -100,7 +140,6 @@ define([
     handleFocus: function() {
       this.$el.find('.custom-select').addClass('focused');
       this.showOptions();
-      this.showTooltip();
     },
     quickSearch: function(e) {
       var $el = $(e.target),
@@ -154,16 +193,6 @@ define([
       this.$el.find('.custom-select-options').hide();
     },
     cursorTimeout: [],
-    showTooltip: function() {
-      var $el = this.$el.find('.custom-select, input.custom-select-content');
-      if ($el.attr('data-tooltip') && !$el.data('activeTooltip')) {
-        new Tooltip({
-          target: $el,
-          text: $el.attr('data-tooltip'),
-          align: 'right'
-        });
-      }
-    },
     highlightOption: function(event) {
       var $el = $(event.target);
       this.$el.find('a').removeClass('current');

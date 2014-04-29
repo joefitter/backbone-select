@@ -6,9 +6,14 @@
     "Joe Fitter <joefitter@hotmail.com>"
   ],
   "description": "Custom AMD select element using Backbone & Require",
-  "main": "app/views/BaseView.js",
+  "main": [
+    "src/backbone-select.js",
+    "src/backbone-select.amd.js",
+    "src/backbone-select.css"
+  ],
   "moduleType": [
-    "amd"
+    "amd",
+    "globals"
   ],
   "license": "MIT",
   "ignore": [
@@ -16,16 +21,12 @@
     "node_modules",
     "bower_components",
     "test",
-    "tests"
+    "Gruntfile.js",
+    "karma.conf.js",
+    "package.json"
   ],
   "dependencies": {
-    "requirejs-mustache": "*",
-    "requirejs": "~2.1.11",
-    "requirejs-text": "~2.0.12",
-    "underscore": "~1.6.0",
-    "backbone": "~1.1.2",
-    "jquery.scrollTo": "~1.4.11",
-    "jquery": "~2.1.0",
-    "mustache": "~0.8.1"
+    "backbone": ">=0.9.0",
+    "jquery": ">=1.9.0",
   }
 }

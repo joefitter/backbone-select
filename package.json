@@ -1,0 +1,31 @@
+{
+  "name": "backbone-select",
+  "version": "0.0.0",
+  "description": "Custom AMD select element using Backbone & Require",
+  "main": "src/backbone-select.amd.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/joefitter/backbone-select.git"
+  },
+  "author": "Joe Fitter",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/joefitter/backbone-select/issues"
+  },
+  "homepage": "https://github.com/joefitter/backbone-select",
+  "devDependencies": {
+    "grunt": "^0.4.4",
+    "karma-chrome-launcher": "^0.1.3",
+    "karma-requirejs": "^0.2.1",
+    "karma-jasmine": "^0.1.5",
+    "requirejs": "^2.1.11",
+    "grunt-karma": "^0.8.3",
+    "grunt-contrib-watch": "^0.6.1",
+    "karma-phantomjs-launcher": "^0.1.4",
+    "grunt-bower-task": "^0.3.4",
+    "karma": "^0.12.14"
+  }
+}
