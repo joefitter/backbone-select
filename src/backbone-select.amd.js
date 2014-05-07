@@ -93,11 +93,9 @@ define([
     events: {
       'click': 'focusSelect',
       'focus input.custom-select-input': 'handleFocus',
-      //'keyup input.quicksearch': 'quickSearch',
       'keydown input.custom-select-input': 'navigate',
       'mouseenter .custom-select-options a': 'highlightOption',
-      'mouseout .custom-select-wrapper': 'deselectAll',
-      //'click .options-container a': 'clickHandler'
+      'mouseout .custom-select-wrapper': 'deselectAll'
     },
     focus: false,
     render: function() {
@@ -106,11 +104,17 @@ define([
       }
       var template = this.buildTemplate();
       this.$el.html(_.template(template)(this));
-      $(window).bind('mousedown', _.bind(this.clickHandler, this));
-      //$(window).bind('keydown', _.bind(this.keypressHandler, this));
-      this.delegateEvents();
+      this.bindWindowEvents();
       return this;
     },
+
+    bindWindowEvents: function(){
+      this.boundClickHandler = _.bind(this.clickHandler, this);
+      this.boundKeypressHandler = _.bind(this.keypressHandler, this);
+      $(window).bind('mousedown', this.boundClickHandler);
+      $(window).bind('keydown', this.boundKeypressHandler);
+    },
+
     buildTemplate: function(){
       var tpl = '<div class="custom-select-wrapper <%= options.shade %>">';
       if(!this.options.multiSelect){
@@ -170,8 +174,6 @@ define([
             return;
           }
           if (!this.options.multiSelect) {
-            this.hideOptions();
-            this.focus = false;
             this.handleOptionClick(e);
           } 
         }
@@ -182,12 +184,11 @@ define([
     handleOptionClick: function(e) {
       var $el = $(e.target);
       this.clickOption($el);
-      return false;
     },
     clickOption: function($el) {
       if (!this.options.multiSelect) {
         this.changeOption($el);
-        this.focus = false;
+
         this.hideOptions();
       } else {
         this.changeOption($el);
@@ -199,14 +200,11 @@ define([
       }
     },
     handleBlur: function() {
-      this.focus = false;
       this.hideOptions();
       this.$el.find('.custom-select').removeClass('focused');
     },
     focusSelect: function() {
       this.$el.find('input.custom-select-input').focus();
-      this.focus = true;
-      this.handleFocus();
     },
     handleFocus: function() {
       this.$el.find('.custom-select').addClass('focused');
@@ -244,49 +242,8 @@ define([
           return false;
       }
     },
-    quickSearch: function(e) {
-      var $el = $(e.target),
-        val = $el.val(),
-        key = e.keyCode,
-        current;
-      if (key === 13) { //enter
-        $el.val('');
-        this.clickOption($('a.current', this.el));
-        $('a', this.el).removeClass('current');
-      } else if (key === 27) { //esc
-        this.hideOptions();
-        this.focus = false;
-      } else if (key === 40) { //down arrow
-        e.preventDefault();
-        this.showOptions();
-        
-      } else if (key === 38) { //up arrow
-        e.preventDefault();
-        this.showOptions();
-        current = $('a.current', this.el).length ? $('a.current', this.el).prev() : $('a', this.el).last();
-        $('a.current', this.el).removeClass('current');
-        current.addClass('current');
-        if (current.length) {
-          $('.options-container', this.el).stop().scrollTo(current, 400);
-        }
-      } else if (val !== '') {
-        $('a', this.el).removeClass('current');
-        current = $('a:Contains("' + val + '")', this.el).first();
-        current.addClass('current');
-        if (current.length) {
-          $('.options-container', this.el).stop().scrollTo(current, 400);
-        }
-      } else {
-        $('a', this.el).removeClass('current');
-        $('.options.container', this.el).stop().scrollTo({
-          top: 0,
-          left: 0
-        }, 400);
-      }
-    },
     showOptions: function() {
       $('.custom-select-options', this.el).show();
-      $('.options-container a:first').addClass('current');
     },
     hideOptions: function() {
       $('.custom-select-options', this.el).hide();
@@ -305,17 +262,23 @@ define([
       if (!this.options.multiSelect) {
         $('.custom-select-content', this.el).text($target.text());
         this.trigger('changed', $target.attr('data-value'));
-        this.$el.find('input').blur();
       }
     },
+    unbindWindowEvents: function(){
+      $(window).unbind('mousedown', this.boundClickHandler);
+      $(window).unbind('keydown', this.boundKeypressHandler);
+    },
     destroy: function() {
+      this.unbindWindowEvents();
       this.unbind();
       this.remove();
     },
     reset: function() {
+      this.unbindWindowEvents();
       this.render();
     },
     empty: function(){
+      this.unbindWindowEvents();
       this.$el.empty();
       this.undelegateEvents();
       this.$el.removeData().unbind();    
