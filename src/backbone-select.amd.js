@@ -2,7 +2,8 @@
 
 define([
   'jquery',
-  'backbone'
+  'backbone',
+  'scrollTo'
 ], function(
   $,
   Backbone
@@ -14,7 +15,6 @@ define([
 
   return Backbone.View.extend({
     initialize: function(options) {
-      var self = this;
       if (!options || typeof options !== 'object') {
         throw new Error('Tooltip needs to be provided with a jQuery element object or options hash');
       }
@@ -28,8 +28,26 @@ define([
       } else {
         this.options = options;
       }
+
+      /*
+       * check collection passed in options, if so
+       * check if it is a collection of strings,
+       * if so, map to array of objects
+       */
+      if(this.options.collection.length){
+        if(typeof this.options.collection[0] === 'string'){
+          this.options.collection = _.map(this.options.collection, function(item){
+            return {value:item, title:item};
+          });
+        }
+      }
       
       this.collection = new CustomSelectCollection(this.options.collection);
+
+      /*
+       * Adding placeholder as option will enable the user
+       * unassign value if this is clicked
+       */
       if (this.options.placeholder && this.options.addPlaceholderAsOption) {
         this.collection.add({
           value: -1,
@@ -38,30 +56,19 @@ define([
           at: 0
         });
       }
-      if (!this.options.shade) {
-        this.options.shade = 'light';
-      }
       this.options.emptyText = this.options.emptyText || 'No results available';
       this.options.placeholder = this.options.placeholder || 'Choose one...';
       this.render();
+
+      /*
+       * Create new jQuery :Contains selector
+       * which ignores case
+       */
       $.expr[':'].Contains = jQuery.expr.createPseudo(function(arg) {
         return function(elem) {
           return jQuery(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
         };
       });
-      $.fn.scrollTo = function(ref, duration){
-        self.scrollTo($(this), ref, duration);
-      };
-    },
-    scrollTo: function($el, $ref, duration){
-      var top = $ref.position().top + $ref.outerHeight();
-      if(top >= $ref.offsetParent().outerHeight()){
-        $el.animate({scrollTop: $ref.outerHeight()}, 400);
-      }
-      console.log($ref.offsetParent())
-      console.log($el.scrollTop())
-      console.log(top)
-      //
     },
     parseDataAttributes: function($el){
       var ops = {};
@@ -98,8 +105,8 @@ define([
       }
       var template = this.buildTemplate();
       this.$el.html(_.template(template)(this));
-      // $(window).bind('mousedown', _.bind(this.clickHandler, this));
-      // $(window).bind('keydown', _.bind(this.keypressHandler, this));
+      //$(window).bind('mousedown', _.bind(this.clickHandler, this));
+      //$(window).bind('keydown', _.bind(this.keypressHandler, this));
       this.delegateEvents();
       return this;
     },
@@ -198,6 +205,7 @@ define([
     focusSelect: function() {
       this.$el.find('input.custom-select-input').focus();
       this.focus = true;
+      this.handleFocus();
     },
     handleFocus: function() {
       this.$el.find('.custom-select').addClass('focused');
@@ -208,7 +216,12 @@ define([
       switch(kc){
         case 37: //left arrow
         case 38: //up arrow
-          //scroll up
+          current = $('a.current', this.el).length ? $('a.current', this.el).prev() : $('a', this.el).last();
+          $('a.current', this.el).removeClass('current');
+          current.addClass('current');
+          if (current.length) {
+            $('.options-container', this.el).stop().scrollTo(current, 400);
+          }
           break;
         case 39: //right arrow
         case 40: //down arrow
