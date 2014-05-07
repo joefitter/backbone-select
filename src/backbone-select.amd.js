@@ -183,12 +183,13 @@ define([
     },
     handleOptionClick: function(e) {
       var $el = $(e.target);
-      this.clickOption($el);
+      if($el.prop('tagName') === 'A'){
+        this.clickOption($el);
+      }
     },
     clickOption: function($el) {
       if (!this.options.multiSelect) {
         this.changeOption($el);
-
         this.hideOptions();
       } else {
         this.changeOption($el);
