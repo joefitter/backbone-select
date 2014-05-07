@@ -94,9 +94,10 @@ define([
       'click': 'focusSelect',
       'focus input.custom-select-input': 'handleFocus',
       //'keyup input.quicksearch': 'quickSearch',
-      'keyup input.custom-select-input': 'navigate',
+      'keydown input.custom-select-input': 'navigate',
       'mouseenter .custom-select-options a': 'highlightOption',
-      'mouseout .custom-select-wrapper': 'deselectAll'
+      'mouseout .custom-select-wrapper': 'deselectAll',
+      //'click .options-container a': 'clickHandler'
     },
     focus: false,
     render: function() {
@@ -105,7 +106,7 @@ define([
       }
       var template = this.buildTemplate();
       this.$el.html(_.template(template)(this));
-      //$(window).bind('mousedown', _.bind(this.clickHandler, this));
+      $(window).bind('mousedown', _.bind(this.clickHandler, this));
       //$(window).bind('keydown', _.bind(this.keypressHandler, this));
       this.delegateEvents();
       return this;
@@ -214,6 +215,9 @@ define([
     navigate: function(e){
       var kc = e.keyCode, current;
       switch(kc){
+        case 9: //tab key
+          this.handleBlur();
+          return true;
         case 37: //left arrow
         case 38: //up arrow
           current = $('a.current', this.el).length ? $('a.current', this.el).prev() : $('a', this.el).last();
@@ -231,6 +235,10 @@ define([
           if (current.length) {
             $('.options-container', this.el).stop().scrollTo(current, 400);
           }
+          break;
+        case 13: //enter
+          this.clickOption($('a.current', this.el));
+          $('a', this.el).removeClass('current');
           break;
         default:
           return false;
@@ -294,19 +302,23 @@ define([
     },
     changeOption: function($target) {
       this.trigger('option-added', $target.attr('data-value'));
-      this.$el.find('input').focus();
       if (!this.options.multiSelect) {
         $('.custom-select-content', this.el).text($target.text());
         this.trigger('changed', $target.attr('data-value'));
+        this.$el.find('input').blur();
       }
     },
     destroy: function() {
-      this.undelegateEvents();
-      this.$el.removeData().unbind();
+      this.unbind();
       this.remove();
     },
     reset: function() {
       this.render();
+    },
+    empty: function(){
+      this.$el.empty();
+      this.undelegateEvents();
+      this.$el.removeData().unbind();    
     }
   });
 });
