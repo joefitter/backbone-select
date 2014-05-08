@@ -240,7 +240,7 @@ define([
           $('a', this.el).removeClass('current');
           break;
         default:
-          return false;
+          return true;
       }
     },
     showOptions: function() {
@@ -260,6 +260,7 @@ define([
     },
     changeOption: function($target) {
       this.trigger('option-added', $target.attr('data-value'));
+      
       if (!this.options.multiSelect) {
         $('.custom-select-content', this.el).text($target.text());
         this.trigger('changed', $target.attr('data-value'));
